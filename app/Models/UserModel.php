@@ -383,7 +383,7 @@ class UserModel extends Model
             'location' => $array['loc'],
             'country' => $array['cc'],
             'code' => $array['code'],
-            'coins' => 0
+            'coins' => 100
         ];
 
         $check = $this->getByEmail($array['em']);

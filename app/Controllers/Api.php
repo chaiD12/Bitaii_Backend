@@ -243,7 +243,7 @@ class Api extends BaseController
                         $dataUser = $this->userModel->register($this->postBody);
                         $query = "UPDATE tb_user SET referred_by = ? WHERE id_user = ?";
                         $this->db->query($query, array($checkExistRef['id_user'], $dataUser['id_user']));
-                        $query = "UPDATE tb_user SET coins = coins + 10 WHERE id_user = ?";
+                        $query = "UPDATE tb_user SET coins = coins + 150 WHERE id_user = ?";
                         $this->db->query($query, array($checkExistRef['id_user']));
                         $json = array(
                             "result" => array($dataUser),
