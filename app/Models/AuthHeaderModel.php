@@ -47,15 +47,13 @@ class AuthHeaderModel extends Model
 
     public function removeSession($session) {
         //$session = session();
-		$session->remove($this->sessLoginName);
+        $session->remove($this->sessLoginName);
     }
     
     public function authHeader($request) {
         $authTokenBase64Encode = "a7391377c88ca6d43d9c51a166e0d317";  //
 
         $token = $request->headers(); 
-        //print_r($token);
-        //die();
         
         if ($token == '' || $token == null) {
             $this->exitError();

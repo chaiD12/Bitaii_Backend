@@ -25,13 +25,33 @@ class Coins extends BaseController
     public function index()
     {
         $this->sessLogin = session();
-		$check = $this->authModel->checkSession($this->sessLogin);
-        if ($check) {
+        echo $this->sessLogin->get('logged_in');
+        echo $this->sessLogin->get('logged_in');
+        die();
+    }
+
+    public function is_logged_in()
+    {
+        // Check if the user is logged in
+        if (!$this->sessLogin->get('logged_in')) {
+            // If the user is not logged in, redirect to the login page
+            return redirect()->to('/login');
+        }
+    }
+
+    public function get_coins($userId)
+    {
             try {
-                $sql = $this->db->query('SELECT * from tb_user');
-                $results = $sql->getResult();
+                $userRecord = $this->userModel->find($userId);
+    
+                if (!$userRecord) {
+                    throw new \CodeIgniter\Exceptions\PageNotFoundException("User with ID {$userId} not found.");
+                }
+                $coins = $userRecord['coins'];
                 $json = array(
-                    "result" => array($results),
+                    "result" => array(
+                        "coins" => $coins,
+                    ),
                     "code" => "200",
                     "message" => "Success",
                 );
@@ -40,7 +60,7 @@ class Coins extends BaseController
                 header('Access-Control-Allow-Methods: GET');
                 header('Access-Control-Allow-Headers: Content-Type, Authorization');
                 echo json_encode($json);
-            } catch (\CodeIgniter\Database\Exceptions\DatabaseException $e) {
+            } catch (\CodeIgniter\Exceptions\PageNotFoundException $e) {
                 $json = array(
                     "result" => array($e->getMessage()),
                     "code" => $e->getCode(),
@@ -49,81 +69,23 @@ class Coins extends BaseController
                 header('Content-Type: application/json');
                 header('Access-Control-Allow-Origin: *');
                 header('Access-Control-Allow-Methods: GET');
-                header('Access-Control-Allow-Headers: Content-Type, Authorization');
+                http_response_code(404);
+                echo json_encode($json);
+            } catch (\Exception $e) {
+                $json = array(
+                    "result" => array($e->getMessage()),
+                    "code" => $e->getCode(),
+                    "message" => "Failed",
+                );
+                header('Content-Type: application/json');
+                header('Access-Control-Allow-Origin: *');
+                header('Access-Control-Allow-Methods: GET');
                 http_response_code(500);
                 echo json_encode($json);
             }
-            die();
-        }
-    }
-
-    public function get_coins($userId)
-    {
-        $this->sessLogin = session();
-        $check = $this->authModel->checkSession($this->sessLogin);
-        if (!$check) {
-            return redirect()->to(base_url());
-        }
-        try {
-            // Retrieve the user's record from the database using the user ID
-            $userRecord = $this->userModel->find($userId);
-
-            if (!$userRecord) {
-                // If the user record doesn't exist, return a 404 error
-                throw new \CodeIgniter\Exceptions\PageNotFoundException("User with ID {$userId} not found.");
-            }
-
-            // Extract the coins field from the user's record
-            $coins = $userRecord['coins'];
-
-            // Return a JSON response with the user's coins
-            $json = array(
-                "result" => array(
-                    "coins" => $coins,
-                ),
-                "code" => "200",
-                "message" => "Success",
-            );
-            header('Content-Type: application/json');
-            header('Access-Control-Allow-Origin: *');
-            header('Access-Control-Allow-Methods: GET');
-            header('Access-Control-Allow-Headers: Content-Type, Authorization');
-            echo json_encode($json);
-        } catch (\CodeIgniter\Exceptions\PageNotFoundException $e) {
-            // Return a JSON response with a 404 error message
-            $json = array(
-                "result" => array($e->getMessage()),
-                "code" => $e->getCode(),
-                "message" => "Failed",
-            );
-            header('Content-Type: application/json');
-            header('Access-Control-Allow-Origin: *');
-            header('Access-Control-Allow-Methods: GET');
-            // header('Access-Control-Allow-Headers: Content-Type, Authorization');
-            http_response_code(404);
-            echo json_encode($json);
-        } catch (\Exception $e) {
-            // Return a JSON response with a generic error message
-            $json = array(
-                "result" => array($e->getMessage()),
-                "code" => $e->getCode(),
-                "message" => "Failed",
-            );
-            header('Content-Type: application/json');
-            header('Access-Control-Allow-Origin: *');
-            header('Access-Control-Allow-Methods: GET');
-            // header('Access-Control-Allow-Headers: Content-Type, Authorization');
-            http_response_code(500);
-            echo json_encode($json);
-        }
     }
     public function update_coins($userID)
     {
-        $this->sessLogin = session();
-        $check = $this->authModel->checkSession($this->sessLogin);
-        if (!$check) {
-            return redirect()->to(base_url());
-        }
         try {
             $coins = $this->request->getVar('coins');
             $this->userModel->updateCoins($userID, $coins);
@@ -132,24 +94,14 @@ class Coins extends BaseController
                 "code" => "200",
                 "message" => "Coins updated successfully",
             );
-            $this->response
-                ->setStatusCode(200)
-                ->setHeader('Access-Control-Allow-Origin', '*')
-                ->setHeader('Access-Control-Allow-Methods', 'PUT, OPTIONS')
-                // ->setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
-                ->setJSON($json);
+            echo json_encode($json);
         } catch (\Exception $e) {
             $json = array(
                 "result" => array($e->getMessage()),
                 "code" => $e->getCode(),
                 "message" => "Failed",
             );
-            $this->response
-                ->setStatusCode(500)
-                ->setHeader('Access-Control-Allow-Origin', '*')
-                ->setHeader('Access-Control-Allow-Methods', 'PUT, OPTIONS')
-                ->setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
-                ->setJSON($json);
+            echo json_encode($json);
         }
     }
 }
