@@ -125,16 +125,6 @@ class Api extends BaseController
 
     public function login()
     {
-        $this->sessLogin = session();
-        $check = $this->authModel->checkSession($this->sessLogin);
-        if (!$check) {
-            $json = array(
-                "result" => array(),
-                "code" => "200",
-                "message" => "Success",
-            );
-            echo json_encode($json);
-        }
         $this->postBody = $this->authModel->authHeader($this->request);
 
         $offset = 0;
@@ -177,6 +167,61 @@ class Api extends BaseController
         echo json_encode($json);
         die();
     }
+
+    // public function login()
+    // {
+    //     $this->sessLogin = session();
+    //     $check = $this->authModel->checkSession($this->sessLogin);
+    //     if (!$check) {
+    //         $json = array(
+    //             "result" => array(),
+    //             "code" => "200",
+    //             "message" => "Success",
+    //         );
+    //         echo json_encode($json);
+    //     }
+    //     $this->postBody = $this->authModel->authHeader($this->request);
+
+    //     $offset = 0;
+    //     $limit = 10;
+
+    //     $getLimit = $this->request->getVar('lt');
+    //     if ($getLimit != '') {
+    //         $exp = explode(",", $getLimit);
+    //         $offset = (int) $exp[0];
+    //         $limit = (int) $exp[1];
+
+    //     }
+
+    //     //123456    cfc5902918296762903710e9c9a65580
+    //     $passwrd = $this->generatePassword($this->postBody['ps']);
+    //     $dataUser = $this->userModel->loginByEmail($this->postBody['em'], $passwrd);
+
+    //     if ($this->postBody['is'] != '' && $dataUser['id_user'] != '') {
+    //         $this->postBody['id'] = $dataUser['id_user'];
+    //         $this->userModel->updateUser($this->postBody);
+    //     }
+
+    //     $arr = $dataUser;
+    //     if (count($arr) < 1) {
+    //         $json = array(
+    //             "result" => $arr,
+    //             "code" => "201",
+    //             "message" => "Email/Username & Password invalid",
+    //         );
+    //     } else {
+    //         $json = array(
+    //             "result" => $arr,
+    //             "code" => "200",
+    //             "message" => "Success",
+    //         );
+    //     }
+
+    //     //add the header here
+    //     header('Content-Type: application/json');
+    //     echo json_encode($json);
+    //     die();
+    // }
 
     /*
     getByReferralCode() - This function retrieves user data based on the referral code.
@@ -245,8 +290,9 @@ class Api extends BaseController
                         $this->db->query($query, array($checkExistRef['id_user'], $dataUser['id_user']));
                         $query = "UPDATE tb_user SET coins = coins + 150 WHERE id_user = ?";
                         $this->db->query($query, array($checkExistRef['id_user']));
+                        $currentUser = $this->userModel->getByEmail($dataUser['email']);
                         $json = array(
-                            "result" => array($dataUser),
+                            "result" => array($currentUser),
                             "code" => "201",
                             "message" => "User created successfully"
                         );
@@ -262,8 +308,9 @@ class Api extends BaseController
                 } else {
                     $this->postBody['code'] = $this->generate_referral_code();
                     $dataUser = $this->userModel->register($this->postBody);
+                    $currentUser = $this->userModel->getByEmail($dataUser['email']);
                     $json = array(
-                        "result" => array($dataUser),
+                        "result" => array($currentUser),
                         "code" => "201",
                         "message" => "User created successfully"
                     );
@@ -284,13 +331,15 @@ class Api extends BaseController
     //handle register from third party (google-sign-in) (apple-id)
     public function register_3party()
     {
+        // echo "hello there";
         $this->postBody = $this->authModel->authHeader($this->request);
         $arr = array();
 
         if ($this->postBody['ps'] != '' && $this->postBody['em'] != '') {
 
             $checkExist = $this->userModel->getByEmail($this->postBody['em']);
-
+            // echo $checkExist['user_name'];
+            // echo $this->postBody['us'];
             if ($checkExist['id_user'] == '') {
                 $this->postBody['ps'] = $this->generatePassword($this->postBody['ps']);
             } else {

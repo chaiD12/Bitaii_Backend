@@ -44,9 +44,9 @@ class UserModel extends Model
         'following',
         'followers_list',
         'following_list',
-        'code',
         'coins',
-        'referred_by'
+        'referred_by',
+        'code'
     ];
 
     protected $useTimestamps = true;
@@ -202,47 +202,6 @@ class UserModel extends Model
         return $this->getById($array['id']);
     }
 
-    public function updateReferredBy($refId, $userId)
-    {
-        $this->db->set('referred_by', $refId);
-        $this->db->where('id_user', $userId);
-        $this->db->update('tb_user');
-    }
-
-    public function addCoins($userId, $coinsToAdd)
-    {
-        $user = $this->getById($userId);
-        if ($user) {
-            $currentCoins = $user['coins'];
-            $newCoins = $currentCoins + $coinsToAdd;
-            $data = array(
-                'coins' => $newCoins
-            );
-            $this->db->where('id_user', $userId);
-            $this->db->update('tb_user', $data);
-        }
-    }
-
-    // public function updateReferredBy($id_user, $referred_by)
-    // {
-    //     $this->db->set('referred_by', $referred_by);
-    //     $this->db->where('id_user', $id_user);
-    //     $this->db->update('users');
-    // }
-
-    // public function addCoins($userId, $coins)
-    // {
-    //     $user = $this->userModel->getById($userId);
-    //     if ($user) {
-    //         $currentCoins = $user['coins'];
-    //         $newCoins = $currentCoins + $coins;
-    //         $this->userModel->updateCoins($userId, $newCoins);
-    //         return true;
-    //     } else {
-    //         return false;
-    //     }
-    // }
-
     public function payPackage($array)
     {
         if ($array['id'] != '') {
@@ -333,17 +292,6 @@ class UserModel extends Model
         return $this->getById($array['id']);
     }
 
-    public function generateReferralCode()
-    {
-        $referral_code = '';
-        $characters = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-
-        for ($i = 0; $i < 8; $i++) {
-            $referral_code .= $characters[rand(0, strlen($characters) - 1)];
-        }
-
-        return $referral_code;
-    }
     public function register($array)
     {
 
@@ -398,7 +346,12 @@ class UserModel extends Model
 
         return $this->getByEmail($array['em']);
     }
-
+    public function generate_referral_code()
+    {
+        $referral_code = uniqid();
+        // Add any additional logic to format or modify the referral code as needed
+        return $referral_code;
+    }
     public function signIn3Party($array)
     {
 
@@ -420,7 +373,7 @@ class UserModel extends Model
             $plusOne = $plusOne + 1;
             $user_name = $this->generate_unique_user_name($splitname[0], $splitname[1], "$plusOne");
         }
-
+        $ref = $array['code'];
         //$datenow = date('YmdHis');
         $data = [
             'id_user' => $array['id'],
@@ -436,6 +389,8 @@ class UserModel extends Model
             'latitude' => $array['lat'],
             'location' => $array['loc'],
             'country' => $array['cc'],
+            'code' => $this->generate_referral_code(),
+            'coins' => 100
         ];
 
         $check = $this->getByEmail($array['em']);
@@ -447,6 +402,14 @@ class UserModel extends Model
         //die();
 
         $this->save($data);
+        $id = $this->getByEmail($array['em']);
+
+        $checkExistRef = $this->getByRef($ref);
+        $query = "UPDATE tb_user SET referred_by = ? WHERE id_user = ?";
+        $this->db->query($query, array($checkExistRef['id_user'], $id['id_user']));
+
+        $query = "UPDATE tb_user SET coins = coins + 150 WHERE id_user = ?";
+        $this->db->query($query, array($checkExistRef['id_user']));
 
         return $this->getByEmail($array['em']);
     }
@@ -509,12 +472,6 @@ class UserModel extends Model
     public function getByPhone($phone)
     {
         return $this->where('phone', $phone)
-            ->first();
-    }
-
-    public function getByRef($Ref)
-    {
-        return $this->where('code', $Ref)
             ->first();
     }
 
@@ -664,6 +621,42 @@ class UserModel extends Model
         }
 
         return array();
+    }
+
+    public function getByRef($Ref)
+    {
+        return $this->where('code', $Ref)
+            ->first();
+    }
+
+    // public function updateCoins($userId, $coins)
+    // {
+    //     $data = [
+    //         'coins' => $coins,
+    //     ];
+    //     $builder = $this->db->table('tb_user');
+    //     $builder->where('id_user', $userId);
+    //     $builder->update($data);
+    // }
+    public function updateCoins($userId, $coins)
+    {
+        // Get the current number of coins
+        $currentCoins = $this->db->table('tb_user')->select('coins')->where('id_user', $userId)->get()->getRow()->coins;
+
+        // Calculate the new number of coins
+        $newCoins = $currentCoins + $coins;
+
+        // Check if the new number of coins is less than zero
+        if ($newCoins < 0) {
+            throw new \Exception('Coins cannot be less than zero.');
+        }
+
+        $data = [
+            'coins' => $newCoins,
+        ];
+        $builder = $this->db->table('tb_user');
+        $builder->where('id_user', $userId);
+        $builder->update($data);
     }
 }
 
