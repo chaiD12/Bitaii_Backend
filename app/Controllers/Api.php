@@ -168,66 +168,7 @@ class Api extends BaseController
         die();
     }
 
-    // public function login()
-    // {
-    //     $this->sessLogin = session();
-    //     $check = $this->authModel->checkSession($this->sessLogin);
-    //     if (!$check) {
-    //         $json = array(
-    //             "result" => array(),
-    //             "code" => "200",
-    //             "message" => "Success",
-    //         );
-    //         echo json_encode($json);
-    //     }
-    //     $this->postBody = $this->authModel->authHeader($this->request);
 
-    //     $offset = 0;
-    //     $limit = 10;
-
-    //     $getLimit = $this->request->getVar('lt');
-    //     if ($getLimit != '') {
-    //         $exp = explode(",", $getLimit);
-    //         $offset = (int) $exp[0];
-    //         $limit = (int) $exp[1];
-
-    //     }
-
-    //     //123456    cfc5902918296762903710e9c9a65580
-    //     $passwrd = $this->generatePassword($this->postBody['ps']);
-    //     $dataUser = $this->userModel->loginByEmail($this->postBody['em'], $passwrd);
-
-    //     if ($this->postBody['is'] != '' && $dataUser['id_user'] != '') {
-    //         $this->postBody['id'] = $dataUser['id_user'];
-    //         $this->userModel->updateUser($this->postBody);
-    //     }
-
-    //     $arr = $dataUser;
-    //     if (count($arr) < 1) {
-    //         $json = array(
-    //             "result" => $arr,
-    //             "code" => "201",
-    //             "message" => "Email/Username & Password invalid",
-    //         );
-    //     } else {
-    //         $json = array(
-    //             "result" => $arr,
-    //             "code" => "200",
-    //             "message" => "Success",
-    //         );
-    //     }
-
-    //     //add the header here
-    //     header('Content-Type: application/json');
-    //     echo json_encode($json);
-    //     die();
-    // }
-
-    /*
-    getByReferralCode() - This function retrieves user data based on the referral code.
-    generateReferralCode() - This function generates a unique referral code for a new user.
-    updateReferralCode() - This function updates the referral code of a user.
-    */
 
 
     public function getIdByReferralCode($referral_code)
@@ -603,12 +544,79 @@ class Api extends BaseController
         die();
     }
 
+    public function use_spin($userID)
+    {
+        try {
+            $updatedUser = $this->userModel->useSpin($userID);
+            $json = array(
+                "result" => array($updatedUser),
+                "code" => "200",
+                "message" => "Spins updated successfully",
+            );
+            header('Content-Type: application/json');
+            echo json_encode($json);
+        } catch (\Exception $e) {
+            $json = array(
+                "result" => array($e->getMessage()),
+                "code" => $e->getCode(),
+                "message" => "Failed",
+            );
+            header('Content-Type: application/json');
+            echo json_encode($json);
+        }
+    }
+
+    public function get_spin($userID)
+    {
+        try {
+            $userRecord = $this->userModel->getById($userID);
+
+            if (!$userRecord) {
+                throw new \Exception("User with ID {$userID} not found.");
+            }
+            $spin = $userRecord['spin'];
+            echo $userRecord['user_id'];
+            $json = array(
+                "result" => array(
+                    "spin" => $spin,
+                ),
+                "code" => "200",
+                "message" => "Success",
+            );
+            header('Content-Type: application/json');
+            header('Access-Control-Allow-Origin: *');
+            header('Access-Control-Allow-Methods: GET');
+            header('Access-Control-Allow-Headers: Content-Type, Authorization');
+            echo json_encode($json);
+        } catch (\Exception $e) {
+            $json = array(
+                "result" => array($e->getMessage()),
+                "code" => $e->getCode(),
+                "message" => "Failed",
+            );
+            header('Content-Type: application/json');
+            header('Access-Control-Allow-Origin: *');
+            header('Access-Control-Allow-Methods: GET');
+            http_response_code(404);
+            echo json_encode($json);
+        } catch (\Exception $e) {
+            $json = array(
+                "result" => array($e->getMessage()),
+                "code" => $e->getCode(),
+                "message" => "Failed",
+            );
+            header('Content-Type: application/json');
+            header('Access-Control-Allow-Origin: *');
+            header('Access-Control-Allow-Methods: GET');
+            http_response_code(500);
+            echo json_encode($json);
+        }
+    }
     public function hash_password()
     {
         $this->postBody = $this->authModel->authHeader($this->request);
         print_r($this->generatePassword($this->postBody['ps']));
     }
-
     private function generatePassword($password)
     {
         return md5(sha1(hash("sha256", $password)));

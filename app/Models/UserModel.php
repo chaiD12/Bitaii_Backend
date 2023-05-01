@@ -46,7 +46,9 @@ class UserModel extends Model
         'following_list',
         'coins',
         'referred_by',
-        'code'
+        'code',
+        'spin',
+        'last_spin_update'
     ];
 
     protected $useTimestamps = true;
@@ -331,7 +333,9 @@ class UserModel extends Model
             'location' => $array['loc'],
             'country' => $array['cc'],
             'code' => $array['code'],
-            'coins' => 100
+            'coins' => 100,
+            'spin' => 2,
+            'last_spin_update' => date('2023-04-30 13:13:13')
         ];
 
         $check = $this->getByEmail($array['em']);
@@ -390,7 +394,9 @@ class UserModel extends Model
             'location' => $array['loc'],
             'country' => $array['cc'],
             'code' => $this->generate_referral_code(),
-            'coins' => 100
+            'coins' => 100,
+            'spin' => 2,
+            'last_spin_update' => date('Y-m-d H:i:s')
         ];
 
         $check = $this->getByEmail($array['em']);
@@ -560,7 +566,7 @@ class UserModel extends Model
     //send FCM notif
     public function sendFCMMessage($token, $data_array)
     {
-        //$keyServerFCM = 'AAAAInjYsHU:APA91bEirGDQHM1Vdp64CH45KCIEzPXh871At1mOibQpE4hB3uXXWwq7iWPDg-fC9RcKSq0d52LnYH9reILWokvDsqzjL6dFEuzm7MTOgFJ-movuUgcp1p3pQbzTUaKnx9hf3X_xEOg-';
+        // $keyServerFCM = 'AAAAInjYsHU:APA91bEirGDQHM1Vdp64CH45KCIEzPXh871At1mOibQpE4hB3uXXWwq7iWPDg-fC9RcKSq0d52LnYH9reILWokvDsqzjL6dFEuzm7MTOgFJ-movuUgcp1p3pQbzTUaKnx9hf3X_xEOg-';
 
         $url = 'https://fcm.googleapis.com/fcm/send';
         $data = array(
@@ -657,6 +663,28 @@ class UserModel extends Model
         $builder = $this->db->table('tb_user');
         $builder->where('id_user', $userId);
         $builder->update($data);
+    }
+
+    public function useSpin($userId)
+    {
+        // Get the current number of coins
+        $currentCoins = $this->db->table('tb_user')->select('spin')->where('id_user', $userId)->get()->getRow()->spin;
+
+        // Calculate the new number of coins
+        $newCoins = $currentCoins - 1;
+
+        // Check if the new number of coins is less than zero
+        if ($newCoins < 0) {
+            throw new \Exception('Spins cannot be less than zero.');
+        }
+
+        $data = [
+            'spin' => $newCoins,
+        ];
+        $builder = $this->db->table('tb_user');
+        $builder->where('id_user', $userId);
+        $builder->update($data);
+        return $this->getById($userId);
     }
 }
 
