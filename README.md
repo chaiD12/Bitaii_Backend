@@ -8,7 +8,7 @@ This repository contains the backend codebase developed using the CodeIgniter fr
 
 ### Daily Spins
 
-- **ChatGPT Interaction:** Users can have dynamic and engaging conversations with the ChatGPT AI model, enhancing the conversational experience.
+- **ChatGPT Interaction:** Users can have dynamic and engaging conversations with the AI models such as gpt-3.5-turbo, enhancing the conversational experience.
 
 - **DALL·E Integration:** Utilize spins to generate unique images from textual descriptions using DALL·E, adding a visual element to the user experience.
 
